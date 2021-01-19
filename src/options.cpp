@@ -38,6 +38,7 @@ enum {
     WARN_AS_ERROR   = CHAR_MAX+4,
     NOSTDINC        = CHAR_MAX+5,
     WCHAR_SIZE      = CHAR_MAX+6,
+    ERROR_LIMIT     = CHAR_MAX+7
 };
 
 static struct option options[] = {
@@ -58,6 +59,7 @@ static struct option options[] = {
     { "warn-as-error", no_argument,     0, WARN_AS_ERROR   },
     { "nostdinc",    no_argument,       0, NOSTDINC        },
     { "wchar-size",  required_argument, 0, WCHAR_SIZE      },
+    { "error-limit", required_argument, 0, ERROR_LIMIT     },
     { 0, 0, 0, 0 }
 };
 
@@ -223,6 +225,21 @@ void c2ffi::process_args(config &config, int argc, char *argv[]) {
                 }
                 break;
 
+            case ERROR_LIMIT:
+                if (config.error_limit >= 0) {
+                    std::cerr << "Error: --error-limit cannot be specified multiple times" << std::endl;
+                    exit(1);
+                }
+                int error_limit;
+                char term;
+                if (sscanf(optarg, "%d%c", &error_limit, &term) != 1 || error_limit < 0) {
+                    std::cerr << "Error: error limit must be a valid non-negative integer, --error-limit="
+                              << optarg << std::endl;
+                    exit(1);
+                }
+                config.error_limit = error_limit;
+                break;
+
             case 'h':
                 usage();
                 exit(0);
@@ -296,6 +313,7 @@ void usage(void) {
         "\n"
         "      --fail-on-error      Fail command if any compilation error occurs\n"
         "      --warn-as-error      Treat warnings as errors\n"
+        "      --error-limit=N      Display a maximum of N errors (N must be an integer >= 0)\n"
         "\n"
         "Drivers: ";
 
